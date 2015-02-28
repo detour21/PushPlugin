@@ -201,23 +201,10 @@
 
     if (notificationMessage && self.callback)
     {
-        NSMutableString *jsonStr = [NSMutableString stringWithString:@"{"];
-
-        [self parseDictionary:notificationMessage intoJSON:jsonStr];
-
-        if (isInline)
-        {
-            [jsonStr appendFormat:@"foreground:\"%d\"", 1];
-            isInline = NO;
-        }
-		else
-            [jsonStr appendFormat:@"foreground:\"%d\"", 0];
-
-        [jsonStr appendString:@"}"];
-
-        NSLog(@"Msg: %@", jsonStr);
-
-        NSString * jsCallBack = [NSString stringWithFormat:@"%@(%@);", self.callback, jsonStr];
+        NSError *error;
+        NSData *jsonData = [NSJSONSerialization dataWithJSONObject:notificationMessage options:0 error:&error];
+        NSString *jsonString = [[NSString alloc] initWithData:jsonData encoding:NSUTF8StringEncoding];
+        NSString * jsCallBack = [NSString stringWithFormat:@"%@(%@);", self.callback, jsonString];
         [self.webView stringByEvaluatingJavaScriptFromString:jsCallBack];
 
         self.notificationMessage = nil;
@@ -225,6 +212,7 @@
 }
 
 // reentrant method to drill down and surface all sub-dictionaries' key/value pairs into the top level json
+// GB: this seems unnecessary. The json representation of the dictionary will be easy enough to use on the JS side
 -(void)parseDictionary:(NSDictionary *)inDictionary intoJSON:(NSMutableString *)jsonString
 {
     NSArray         *keys = [inDictionary allKeys];
